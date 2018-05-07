@@ -51,11 +51,11 @@ if __name__ == '__main__':
     # TODO: Go through every image visually to confirm all is well!
 
     # Smart-ass hardcoded file path is fixed!! Hooray!
-    filename = '../labels/labels.csv'
+    filename = './labels/labels.csv'
     labels = read_oasis_csv(filename)
 
     # # Time loading the images and labelling
-    folder = '../images/'
+    folder = './images/'
     tic()
     images, other_labels = image_read(folder, labels)
     toc()
@@ -71,7 +71,7 @@ if __name__ == '__main__':
     # training = mnist.train.images
     # print(training.shape)
 
-    folder = '../tfrecordsdata/'
+    folder = './tfrecordsdata/'
 
     # Create path to tfrecords train data
     path_tfrecords_train = os.path.join(folder, "train.tfrecords")
