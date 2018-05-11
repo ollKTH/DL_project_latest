@@ -56,4 +56,8 @@ def image_read(folder, labels):
             _images.append(_rescale_image)
             _truefalse_labels.append(label)
 
+    # Do array conversion
+    _images = np.asarray(_images)
+    _truefalse_labels = np.asarray(_truefalse_labels)
+
     return _images, _truefalse_labels

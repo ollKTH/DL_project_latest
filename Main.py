@@ -7,8 +7,7 @@ import argparse
 import os
 
 import tensorflow as tf
-
-from tensorflow.examples.tutorials.mnist import input_data
+import keras
 
 
 def tic():
@@ -54,33 +53,41 @@ if __name__ == '__main__':
     filename = './labels/labels.csv'
     labels = read_oasis_csv(filename)
 
-    # # Time loading the images and labelling
-    folder = './images/'
-    tic()
-    images, other_labels = image_read(folder, labels)
-    toc()
-    #
-    # # Check pos vs. negs
-    # positive_subs = [i for i in other_labels if i > 0]
-    # negative_subs = [i for i in other_labels if i == 0]
-    #
-    # print(len(positive_subs))
-    # print(len(negative_subs))
-    # mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
-    #
-    # training = mnist.train.images
-    # print(training.shape)
+    # Read training images
+    train_folder = './train_images/'
+    x_train, y_train = image_read(train_folder, labels)
 
-    folder = './tfrecordsdata/'
+    # Read test images
+    test_folder = './test_images/'
+    x_test, y_test = image_read(test_folder, labels)
 
-    # Create path to tfrecords train data
-    path_tfrecords_train = os.path.join(folder, "train.tfrecords")
+    print(np.max(x_test))
 
-    # Create path to tfrecords test data
-    path_tfrecords_test = os.path.join(folder, "test.tfrecords")
+    # Pre-process training and test data
+    dimData = np.prod(x_train.shape[1:])
+    x_train = x_train.reshape(x_train.shape[0], dimData)
+    x_test = x_test.reshape(x_test.shape[0], dimData)
 
-    # Convert to TFRecords
-    convert(images = images,
-            labels = other_labels,
-            out_path = path_tfrecords_train)
+    # Convert to float32
+    x_train = x_train.astype('float32')
+    x_test = x_test.astype('float32')
 
+    # "Normalize" between 0 - 1 TODO: Find better way, dont know if right
+    x_train /= np.max(x_train)
+    x_test /= np.max(x_test)
+
+    # Convert labels to onehot-encoding
+    y_train = keras.utils.to_categorical(y_train)
+    y_test = keras.utils.to_categorical(y_test)
+
+    # Fake call to Yupeis' function
+    model = DL_keras.CNN7()
+
+    # Compile model, we use SGD and crossentropy
+    model.compile(optimizer=keras.optimizers.sgd(lr='0.01'), loss=keras.losses.categorical_crossentropy, metrics=['accuracy'])
+
+    # TODO: Change validation data to something good
+    results = model.fit(x_train, y_train, batch_size=256, epochs=20, verbose=1,
+                   validation_data=(x_test, y_test))
+
+    # TODO: Add plot for accuracy over time!
