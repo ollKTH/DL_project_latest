@@ -22,6 +22,7 @@ def image_read(folder, labels):
 
     # Convert labels dict to list
     _subject_names = list(labels.keys())
+    print(_subject_names)
     # Store images in this one
     _images = []
     # Store labels corresponding to index in _images in this one
@@ -30,31 +31,32 @@ def image_read(folder, labels):
     # Do for every file in our directory
     for _file in _file_names:
 
-        # Get the subject name for this file by comparing which string in _subject_names is present in _file
-        _index = [i for i, s in enumerate(_subject_names) if s in _file]
-        _subject = _subject_names[_index[0]] # Cocky assumption that only one index is returned!
+            # Get the subject name for this file by comparing which string in _subject_names is present in _file
+            _index = [i for i, s in enumerate(_subject_names) if s in _file]
+            if len(_index) is not 0:
+                _subject = _subject_names[_index[0]] # Cocky assumption that only one index is returned!
 
-        # Lets do binary labels, using CDR from labels
-        if labels[_subject] > 0:
-            label = 1 # Alzheimer's :(
-            print(_subject)
-        else:
-            label = 0 # No Alzheimer's! :)
+                # Lets do binary labels, using CDR from labels
+                if labels[_subject] > 0:
+                    label = 1 # Alzheimer's :(
+                    print(_subject)
+                else:
+                    label = 0 # No Alzheimer's! :)
 
 
-        # Read image and convert to ndarray
-        _image = sitk.ReadImage(_file)
-        _image = sitk.GetArrayFromImage(_image)
+                # Read image and convert to ndarray
+                _image = sitk.ReadImage(_file)
+                _image = sitk.GetArrayFromImage(_image)
 
-        # Some images have wrong dimension-order, reshape!
-        if _image.shape[0] < 200:
-            _image = np.transpose(_image, (2, 1, 0))
+                # Some images have wrong dimension-order, reshape!
+                if _image.shape[0] < 200:
+                    _image = np.transpose(_image, (2, 1, 0))
 
-        # Create a list of images
-        for i in range(110, 150):
-            _rescale_image = cv2.resize(_image[i, :, :], dsize=(200, 200), interpolation=cv2.INTER_CUBIC)
-            _images.append(_rescale_image)
-            _truefalse_labels.append(label)
+                # Create a list of images
+                for i in range(110, 150):
+                    _rescale_image = cv2.resize(_image[i, :, :], dsize=(200, 200), interpolation=cv2.INTER_CUBIC)
+                    _images.append(_rescale_image)
+                    _truefalse_labels.append(label)
 
     # Do array conversion
     _images = np.asarray(_images)
