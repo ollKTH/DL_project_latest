@@ -22,11 +22,12 @@ def image_read(folder, labels):
 
     # Convert labels dict to list
     _subject_names = list(labels.keys())
-    print(_subject_names)
     # Store images in this one
     _images = []
     # Store labels corresponding to index in _images in this one
     _truefalse_labels = []
+    # Store corresponding patient name for each image
+    _subjects = []
 
     # Do for every file in our directory
     for _file in _file_names:
@@ -39,7 +40,6 @@ def image_read(folder, labels):
                 # Lets do binary labels, using CDR from labels
                 if labels[_subject] > 0:
                     label = 1 # Alzheimer's :(
-                    print(_subject)
                 else:
                     label = 0 # No Alzheimer's! :)
 
@@ -50,16 +50,21 @@ def image_read(folder, labels):
 
                 # Some images have wrong dimension-order, reshape!
                 if _image.shape[0] < 200:
-                    _image = np.transpose(_image, (2, 1, 0))
+                    _image = np.transpose(_image, (1, 2, 0))
+                    _image = np.flip(_image, 1)
 
-                # Create a list of images
-                for i in range(110, 150):
-                    _rescale_image = cv2.resize(_image[i, :, :], dsize=(200, 200), interpolation=cv2.INTER_CUBIC)
-                    _images.append(_rescale_image)
-                    _truefalse_labels.append(label)
+                if _image.shape[0] > 200:
+                    # Create a list of images
+                    for i in range(120, 150):
+                        _rescale_image = cv2.resize(_image[i, :, :], dsize=(200, 200), interpolation=cv2.INTER_CUBIC)
+                        _images.append(_rescale_image)
+                        _truefalse_labels.append(label)
+                        _subjects.append(_subject)
 
     # Do array conversion
     _images = np.asarray(_images)
     _truefalse_labels = np.asarray(_truefalse_labels)
 
-    return _images, _truefalse_labels
+    print('Done!')
+
+    return _images, _truefalse_labels, _subjects

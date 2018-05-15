@@ -4,6 +4,8 @@ from read_images import *
 from build_tfrecord import *
 from DL_keras import *
 from create_sets import *
+from DL_DemNet import *
+from DL_test1 import *
 import gc
 import argparse
 import os
@@ -11,6 +13,7 @@ import os
 import tensorflow as tf
 import keras
 from keras.utils import plot_model
+#from sklearn.preprocessing import MinMaxScaler
 
 
 def tic():
@@ -26,7 +29,7 @@ def toc():
     else:
         print("Toc: start time not set")
 
-def display_images(images, labels):
+def display_images(images, labels, subject_name):
     '''
     Displays images in images and prints their corresponding label in labels. Only for subjects with dementia!
 
@@ -37,13 +40,13 @@ def display_images(images, labels):
     idx = 0
 
     for i in images:
-        if labels[idx] > 0:
-            plt.imshow(i, cmap='gray')
-            plt.show()
-            print(labels[idx])
-            idx += 1
-            plt.close()
-            gc.collect()
+        plt.imshow(i, cmap='gray')
+        plt.title(subject_name[idx])
+        plt.show()
+        print(labels[idx])
+        idx += 1
+        plt.close()
+        gc.collect()
         idx += 1
 
 
@@ -59,22 +62,37 @@ if __name__ == '__main__':
     csv_labels = read_oasis_csv(filename)
 
     folder = 'D:/Users/Olle Andersson/images_project_1/'
-    images, labels = image_read(folder, csv_labels)
+    images, labels, subject_names = image_read(folder, csv_labels)
 
     np.save('images_out', images)
     np.save('labels_out', labels)
+    np.save('names_out', subject_names)
 
     print(images.shape, labels.shape)
-    '''
 
+    '''
     images = np.load('images_out.npy')
     labels = np.load('labels_out.npy')
+    subject_names = np.load('names_out.npy')
 
     # # Check pos vs. negs
     positive_subs = [i for i in labels if i > 0]
     negative_subs = [i for i in labels if i == 0]
 
     x_train, y_train, x_test, y_test = split(images, labels, 0.3)
+
+    start = 4000
+    end = 4300
+
+    #display_images(x_train[start:end, :, :], y_train[start:end], subject_names[start:end])
+
+
+    x_weights = np.zeros(np.size(y_train))
+    for idx, val in enumerate(y_train):
+        if val > 0:
+            x_weights[idx] = 3
+        else:
+            x_weights[idx] = 1
 
     positive_subs = [i for i in y_train if i > 0]
     negative_subs = [i for i in y_train if i == 0]
@@ -103,31 +121,35 @@ if __name__ == '__main__':
     x_test = x_test.astype('float32')
 
     # "Normalize" between 0 - 1 TODO: Find better way, dont know if right
-    x_train /= np.max(x_train)
-    x_test /= np.max(x_test)
+    #x_train /= np.max(x_train)
+    #x_test /= np.max(x_test)
 
     # Convert labels to onehot-encoding
     y_train = keras.utils.to_categorical(y_train, 2)
     y_test = keras.utils.to_categorical(y_test, 2)
 
-    y_train = y_train.reshape(y_train.shape[0], 1, 1, 2)
-    y_test = y_test.reshape(y_test.shape[0], 1, 1, 2)
+    #y_train = y_train.reshape(y_train.shape[0], 1, 1, 2)
+    #y_test = y_test.reshape(y_test.shape[0], 1, 1, 2)
 
-    print(x_train.shape, y_train.shape)
+    y_train = y_train.astype('uint8')
+    y_test = y_test.astype('uint8')
 
     # Fake call to Yupeis' function
-    model = CNN7(3, 0.2)
+    #model = CNN7(2, 0.5)
+    model = test_net()
 
     plot_model(model, show_shapes=True, to_file='model.png')
 
     # Compile model, we use SGD and crossentropy
-    model.compile(optimizer=keras.optimizers.sgd(lr=0.01), loss=keras.losses.categorical_crossentropy, metrics=['accuracy'])
+    model.compile(optimizer=keras.optimizers.sgd(lr=0.01), loss=keras.losses.binary_crossentropy, metrics=['accuracy'])
 
     # TODO: Change validation data to something good
-    history = model.fit(x = x_train, y = y_train, batch_size=50, epochs=10, verbose=1, validation_split=0.3)
+    history = model.fit(x = x_train, y = y_train, batch_size=32, epochs=15, verbose=1,
+                        validation_data=(x_test, y_test))
 
-    model.evaluate(x_test, y_test)
+    results = model.evaluate(x_test, y_test)
 
+    print(results)
     print(history.history.keys())
 
     # summarize history for accuracy
@@ -146,6 +168,3 @@ if __name__ == '__main__':
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='upper left')
     plt.show()
-
-    # TODO: Add plot for accuracy over time!
-    
